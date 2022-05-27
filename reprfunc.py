@@ -6,7 +6,7 @@ from inspect import signature
 from operator import attrgetter
 from collections.abc import Mapping
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 undef = object()
 
 def repr_from_init(self=undef, *, cls=None, attrs={}, skip=[], predicates={}, positional=[]):
