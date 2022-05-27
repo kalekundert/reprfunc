@@ -46,6 +46,6 @@ generated_commits = ['^Merge']
 
 [tool.semantic_release]
 branch = 'release'
-version_variable = 'reprfunc/__init__.py:__version__'
+version_variable = 'reprfunc.py:__version__'
 build_command = 'python -m pip install flit && flit build'
 major_on_zero = false
