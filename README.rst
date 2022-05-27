@@ -54,10 +54,23 @@ Make a repr-string that matches the arguments to the constructor::
   >>> MyObj(1, 2)
   MyObj(a=1, b=2)
 
-The same as above, but also demonstrating some knobs for controlling the 
-output::
+The same as above, but with variable positional and keyword arguments.  These 
+are handled as expected::
 
   >>> class MyObj:
+  ...
+  ...     def __init__(self, *args, **kwargs):
+  ...         self.args = args
+  ...         self.kwargs = kwargs
+  ...
+  ...     __repr__ = repr_from_init
+  ...
+  >>> MyObj(1, 2, a=3, b=4)
+  MyObj(1, 2, a=3, b=4)
+
+The same as above, but demonstrating a variety of ways to control the output::
+
+  >>> class _MyObj:
   ...
   ...     def __init__(self, a, b, c, d=None, _state={}):
   ...         self.a = a
@@ -67,6 +80,10 @@ output::
   ...         self._state = _state
   ...
   ...     __repr__ = repr_from_init(
+  ...         # This option lets you change the class name at the beginning of 
+  ...         # the repr-string.
+  ...         cls='MyObj',
+  ...
   ...         # This option lets you explicitly map argument names to either
   ...         # attribute names, or callables that accept the object in
   ...         # question as their only argument.
@@ -80,14 +97,14 @@ output::
   ...         # predicate can be `True` to unconditionally include an argument,
   ...         # even if it still has its default value.
   ...         skip=['_state'],
-  ...         predicates={'c': bool},
+  ...         predicates={'c': lambda self, x: x},
   ...
   ...         # This option allows you to specify that certain arguments should 
   ...         # be rendered using the "positional" syntax.  Positional-only
   ...         # arguments are rendered this way by default.
   ...         positional=['a'],
   ...     )
-  >>> MyObj(1, 2, 0, _state={3: 4})
+  >>> _MyObj(1, 2, 0, _state={3: 4})
   MyObj(1, b=2)
 
 Make a repr-string that gets its values from a ``__reprargs__()`` method 

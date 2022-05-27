@@ -38,7 +38,7 @@ def repr_from_init(self=undef, *, cls=None, attrs={}, skip=[], predicates={}, po
         return str(builder)
 
     def is_default(param):
-        return lambda v: v is not param.default
+        return lambda self, v: v is not param.default
 
     def is_positional(key, param, before_var):
         return (
@@ -97,12 +97,12 @@ def repr_from_attrs(*args, **kwargs):
 def getter_factory(x):
     return attrgetter(x) if isinstance(x, str) else x
 
-def eval_predicate(f, x):
+def eval_predicate(f, obj, x):
     if f is True:
         return True
     if f is False:
         return False
-    return f(x)
+    return f(obj, x)
 
 class ReprBuilder:
 
@@ -148,7 +148,7 @@ class ReprBuilder:
         values = value if variable else [value]
 
         for value in values:
-            if eval_predicate(predicate, value):
+            if eval_predicate(predicate, self.obj, value):
                 self.add_positional_value(value)
 
     def add_positional_value(self, value):
@@ -166,7 +166,7 @@ class ReprBuilder:
         values = value if variable else {keyword: value}
 
         for key, value in values.items():
-            if eval_predicate(predicate, value):
+            if eval_predicate(predicate, self.obj, value):
                 self.add_keyword_value(key, value)
 
     def add_keyword_value(self, keyword, value):
