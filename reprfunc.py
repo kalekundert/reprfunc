@@ -5,7 +5,7 @@ Utilities for making useful string representations of objects.
 from inspect import signature
 from operator import attrgetter
 
-__version__ = '0.0.0'
+__version__ = '0.1.0'
 undef = object()
 
 def repr_from_init(self=undef, *, attrs={}, skip=[], predicates={}, positional=[]):
