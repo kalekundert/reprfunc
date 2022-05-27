@@ -11,9 +11,7 @@ readme = 'README.rst'
 dynamic = ["version", "description"]
 requires-python = "~=3.7"
 classifiers = [
-  'Programming Language :: Python :: 3',
-]
-dependencies = [
+  'Programming Language :: Python :: 3.7',
 ]
 
 [project.optional-dependencies]

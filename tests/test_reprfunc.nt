@@ -1,0 +1,246 @@
+test_repr:
+  -
+    id: from-init
+    obj:
+      > class Obj:
+      >     
+      >     def __init__(self, a, b):
+      >         self.a = a
+      >         self.b = b
+      >
+      >     __repr__ = reprfunc.repr_from_init
+      >   
+      > obj = Obj(1, 2)
+
+    expected: Obj(a=1, b=2)
+  -
+    id: from-init-attrs
+    obj:
+      > class Obj:
+      >     
+      >     def __init__(self, a, b, c):
+      >         self.a = a
+      >         self._b = b
+      >         self.c = c
+      >
+      >     __repr__ = reprfunc.repr_from_init(
+      >         attrs={'b': '_b', 'c': lambda x: -x.c},
+      >     )
+      >   
+      > obj = Obj(1, 2, -3)
+
+    expected: Obj(a=1, b=2, c=3)
+  -
+    id: from-init-skip
+    obj:
+      > class Obj:
+      >     
+      >     def __init__(self, a, b):
+      >         self.a = a
+      >         self.b = b
+      >
+      >     __repr__ = reprfunc.repr_from_init(skip=['b'])
+      >   
+      > obj = Obj(1, 2)
+
+    expected: Obj(a=1)
+  -
+    id: from-init-positional
+    obj:
+      > class Obj:
+      >     
+      >     def __init__(self, a, b):
+      >         self.a = a
+      >         self.b = b
+      >
+      >     __repr__ = reprfunc.repr_from_init(positional=['a'])
+      >   
+      > obj = Obj(1, 2)
+
+    expected: Obj(1, b=2)
+  -
+    id: from-init-positional-infer
+    marks: python38
+    obj:
+      > class Obj:
+      >     
+      >     def __init__(self, a, /, b):
+      >         self.a = a
+      >         self.b = b
+      >
+      >     __repr__ = reprfunc.repr_from_init
+      >   
+      > obj = Obj(1, 2)
+
+    expected: Obj(1, b=2)
+  -
+    id: from-dunder
+    obj:
+      > class Obj:
+      >     
+      >     def __init__(self, a, b):
+      >         self.a = a
+      >         self.b = b
+      >
+      >     def __reprargs__(self):
+      >         return [self.a], {'b': self.b}
+      >
+      >     __repr__ = reprfunc.repr_from_dunder
+      >   
+      > obj = Obj(1, 2)
+
+    expected: Obj(1, b=2)
+  -
+    id: from-dunder-verbatim
+    obj:
+      > v = reprfunc.verbatim
+      >
+      > class Obj:
+      >     
+      >     def __init__(self, a, b):
+      >         self.a = a
+      >         self.b = b
+      >
+      >     def __reprargs__(self):
+      >         return [v(self.a)], {'b': v(self.b)}
+      >
+      >     __repr__ = reprfunc.repr_from_dunder
+      >   
+      > obj = Obj('x', 'y')
+      >
+    expected: Obj(x, b=y)
+  -
+    id: from-attrs
+    obj:
+      > class Obj:
+      >     
+      >     def __init__(self, a, b, c):
+      >         self.a = a
+      >         self.b = b
+      >         self.c = c
+      >
+      >     __repr__ = reprfunc.repr_from_attrs('a', b='b', c=Key())
+      >   
+      > obj = Obj(1, 2, 3)
+
+    expected: Obj(1, b=2, c=3)
+
+test_repr_builder:
+  -
+    id: cls
+    builder:
+      > builder = ReprBuilder(Obj())
+      > builder.cls = 'XXX'
+    expected:
+      > XXX()
+  -
+    id: add-attr
+    builder:
+      > def get_b(x):
+      >     return -x.b
+      >   
+      > builder = ReprBuilder(Obj(a=1, b=-2, _c=3, d=None))
+      > builder.add_attr('a', positional=True)
+      > builder.add_attr(get_b, positional=True)
+      > builder.add_attr('d', positional=True, predicate=lambda x: x)
+      >
+      > builder.add_attr('a')
+      > builder.add_attr(get_b, keyword='b')
+      > builder.add_attr('_c', keyword='c')
+      > builder.add_attr('d', predicate=lambda x: x)
+    expected:
+      > Obj(1, 2, a=1, b=2, c=3)
+  -
+    id: add-positional-attr
+    builder:
+      > builder = ReprBuilder(Obj(a=1))
+      > builder.add_positional_attr('a')
+    expected:
+      > Obj(1)
+  -
+    id: add-positional-attr-getter
+    builder:
+      > builder = ReprBuilder(Obj(a=-1))
+      > builder.add_positional_attr(lambda x: -x.a)
+    expected:
+      > Obj(1)
+  -
+    id: add-positional-attr-predicate
+    builder:
+      > builder = ReprBuilder(Obj(a=1, b=None))
+      > builder.add_positional_attr('a', predicate=lambda x: x)
+      > builder.add_positional_attr('b', predicate=lambda x: x)
+    expected:
+      > Obj(1)
+  -
+    id: add-positional-attr-not-found
+    builder:
+      > builder = ReprBuilder(Obj())
+      > builder.add_positional_attr('a')
+    expected:
+      > Obj()
+  -
+    id: add-positional-value
+    builder:
+      > builder = ReprBuilder(Obj())
+      > builder.add_positional_value('a')
+    expected:
+      > Obj('a')
+  -
+    id: add-positional-str
+    builder:
+      > builder = ReprBuilder(Obj())
+      > builder.add_positional_str('a')
+    expected:
+      > Obj(a)
+  -
+    id: add-keyword-attr
+    builder:
+      > builder = ReprBuilder(Obj(a=1))
+      > builder.add_keyword_attr('a')
+    expected:
+      > Obj(a=1)
+  -
+    id: add-keyword-attr-getter
+    builder:
+      > builder = ReprBuilder(Obj(a=-1))
+      > builder.add_keyword_attr('a', lambda x: -x.a)
+    expected:
+      > Obj(a=1)
+  -
+    id: add-keyword-attr-rename
+    builder:
+      > builder = ReprBuilder(Obj(b=1))
+      > builder.add_keyword_attr('a', 'b')
+    expected:
+      > Obj(a=1)
+  -
+    id: add-keyword-attr-predicate
+    builder:
+      > builder = ReprBuilder(Obj(a=1, b=None))
+      > builder.add_keyword_attr('a', predicate=lambda x: x)
+      > builder.add_keyword_attr('b', predicate=lambda x: x)
+    expected:
+      > Obj(a=1)
+  -
+    id: add-keyword-attr-not-found
+    builder:
+      > builder = ReprBuilder(Obj())
+      > builder.add_keyword_attr('a')
+    expected:
+      > Obj()
+  -
+    id: add-keyword-value
+    builder:
+      > builder = ReprBuilder(Obj(a=1))
+      > builder.add_keyword_value('a', 'b')
+    expected:
+      > Obj(a='b')
+  -
+    id: add-keyword-str
+    builder:
+      > builder = ReprBuilder(Obj(a=1))
+      > builder.add_keyword_str('a', 'b')
+    expected:
+      > Obj(a=b)
+
