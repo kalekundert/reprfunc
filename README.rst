@@ -90,8 +90,8 @@ output::
   >>> MyObj(1, 2, 0, _state={3: 4})
   MyObj(1, b=2)
 
-Make a repr-string that gets its values from a `__reprargs__()` method defined 
-by the object in question::
+Make a repr-string that gets its values from a ``__reprargs__()`` method 
+defined by the object in question::
 
   >>> class MyObj:
   ...
@@ -126,7 +126,7 @@ Make a repr-string from a hard-coded list of attributes::
   >>> MyObj(1, 2)
   MyObj(1, b=2)
 
-Use `ReprBuilder` to help formatting bespoke repr-strings.  You can think of 
+Use ``ReprBuilder`` to help formatting bespoke repr-strings.  You can think of 
 this class as a collection of positional and keyword arguments that knows how 
 to format itself.  It provides many more methods for registering 
 positional/keyword arguments beyond what's demonstrated here, so consult the 
