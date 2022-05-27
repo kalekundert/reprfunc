@@ -13,6 +13,14 @@ def repr_from_init(self=undef, *, attrs={}, skip=[], predicates={}, positional=[
         sig = signature(self.__init__)
         builder = ReprBuilder(self)
 
+        before_var = set()
+        for key, param in sig.parameters.items():
+            before_var.add(key)
+            if param.kind is param.VAR_POSITIONAL:
+                break
+        else:
+            before_var.clear()
+
         for key, param in sig.parameters.items():
             if key in skip:
                 continue
@@ -21,16 +29,28 @@ def repr_from_init(self=undef, *, attrs={}, skip=[], predicates={}, positional=[
                     attr=attrs.get(key, key),
                     keyword=key,
                     predicate=predicates.get(key, is_default(param)),
-                    positional=is_positional(key, param),
+                    positional=is_positional(key, param, before_var),
+                    variable=is_variable(param),
             )
 
         return str(builder)
 
-    def is_positional(key, param):
-        return (key in positional) or (param.kind is param.POSITIONAL_ONLY)
-
     def is_default(param):
         return lambda v: v is not param.default
+
+    def is_positional(key, param, before_var):
+        return (
+                key in positional or
+                key in before_var or
+                param.kind is param.POSITIONAL_ONLY or
+                param.kind is param.VAR_POSITIONAL
+        )
+
+    def is_variable(param):
+        return (
+                param.kind is param.VAR_POSITIONAL or
+                param.kind is param.VAR_KEYWORD
+        )
 
     if self is undef:
         return __repr__
@@ -73,7 +93,6 @@ def eval_predicate(f, x):
         return False
     return f(x)
 
-
 class ReprBuilder:
 
     def __init__(self, obj):
@@ -91,27 +110,32 @@ class ReprBuilder:
         ]
         return f'{cls}({", ".join((*args, *kwargs))})'
 
-    def add_attr(self, attr, *, keyword=None, predicate=True, positional=False):
+    def add_attr(self, attr, *, keyword=None, predicate=True, positional=False, variable=False):
         if positional:
             self.add_positional_attr(
                     attr,
                     predicate=predicate,
+                    variable=variable,
             )
         else:
             self.add_keyword_attr(
                     keyword or attr,
                     attr,
                     predicate=predicate,
+                    variable=variable,
             )
 
-    def add_positional_attr(self, attr, predicate=True):
+    def add_positional_attr(self, attr, predicate=True, variable=False):
         try:
             value = getter_factory(attr)(self.obj)
         except AttributeError:
             return
 
-        if eval_predicate(predicate, value):
-            self.add_positional_value(value)
+        values = value if variable else [value]
+
+        for value in values:
+            if eval_predicate(predicate, value):
+                self.add_positional_value(value)
 
     def add_positional_value(self, value):
         self.add_positional_str(repr(value))
@@ -119,14 +143,17 @@ class ReprBuilder:
     def add_positional_str(self, value):
         self.args.append(value)
 
-    def add_keyword_attr(self, keyword, attr=None, *, predicate=True):
+    def add_keyword_attr(self, keyword, attr=None, *, predicate=True, variable=False):
         try:
             value = getter_factory(attr or keyword)(self.obj)
         except AttributeError:
             return
 
-        if eval_predicate(predicate, value):
-            self.add_keyword_value(keyword, value)
+        values = value if variable else {keyword: value}
+
+        for key, value in values.items():
+            if eval_predicate(predicate, value):
+                self.add_keyword_value(key, value)
 
     def add_keyword_value(self, keyword, value):
         self.add_keyword_str(keyword, repr(value))
