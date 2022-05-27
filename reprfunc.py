@@ -8,7 +8,7 @@ from operator import attrgetter
 __version__ = '0.0.0'
 undef = object()
 
-def repr_from_init(self=undef, *, attrs={}, skip=[], positional=[]):
+def repr_from_init(self=undef, *, attrs={}, skip=[], predicates={}, positional=[]):
     def __repr__(self):
         sig = signature(self.__init__)
         builder = ReprBuilder(self)
@@ -20,7 +20,7 @@ def repr_from_init(self=undef, *, attrs={}, skip=[], positional=[]):
             builder.add_attr(
                     attr=attrs.get(key, key),
                     keyword=key,
-                    predicate=lambda v: v is not param.default,
+                    predicate=predicates.get(key, is_default(param)),
                     positional=is_positional(key, param),
             )
 
@@ -28,6 +28,9 @@ def repr_from_init(self=undef, *, attrs={}, skip=[], positional=[]):
 
     def is_positional(key, param):
         return (key in positional) or (param.kind is param.POSITIONAL_ONLY)
+
+    def is_default(param):
+        return lambda v: v is not param.default
 
     if self is undef:
         return __repr__
@@ -63,8 +66,13 @@ def repr_from_attrs(*args, **kwargs):
 def getter_factory(x):
     return attrgetter(x) if isinstance(x, str) else x
 
-def true(x):
-    return True
+def eval_predicate(f, x):
+    if f is True:
+        return True
+    if f is False:
+        return False
+    return f(x)
+
 
 class ReprBuilder:
 
@@ -83,7 +91,7 @@ class ReprBuilder:
         ]
         return f'{cls}({", ".join((*args, *kwargs))})'
 
-    def add_attr(self, attr, *, keyword=None, predicate=true, positional=False):
+    def add_attr(self, attr, *, keyword=None, predicate=True, positional=False):
         if positional:
             self.add_positional_attr(
                     attr,
@@ -96,13 +104,13 @@ class ReprBuilder:
                     predicate=predicate,
             )
 
-    def add_positional_attr(self, attr, predicate=true):
+    def add_positional_attr(self, attr, predicate=True):
         try:
             value = getter_factory(attr)(self.obj)
         except AttributeError:
             return
 
-        if predicate(value):
+        if eval_predicate(predicate, value):
             self.add_positional_value(value)
 
     def add_positional_value(self, value):
@@ -111,13 +119,13 @@ class ReprBuilder:
     def add_positional_str(self, value):
         self.args.append(value)
 
-    def add_keyword_attr(self, keyword, attr=None, *, predicate=true):
+    def add_keyword_attr(self, keyword, attr=None, *, predicate=True):
         try:
             value = getter_factory(attr or keyword)(self.obj)
         except AttributeError:
             return
 
-        if predicate(value):
+        if eval_predicate(predicate, value):
             self.add_keyword_value(keyword, value)
 
     def add_keyword_value(self, keyword, value):

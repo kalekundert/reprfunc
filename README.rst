@@ -59,10 +59,11 @@ output::
 
   >>> class MyObj:
   ...
-  ...     def __init__(self, a, b, c=None, _state={}):
+  ...     def __init__(self, a, b, c, d=None, _state={}):
   ...         self.a = a
   ...         self._b = b
   ...         self.c = c
+  ...         self.d = d
   ...         self._state = _state
   ...
   ...     __repr__ = repr_from_init(
@@ -71,17 +72,22 @@ output::
   ...         # question as their only argument.
   ...         attrs={'b': '_b'},
   ...
-  ...         # This option allows you to exclude certain arguments from the
-  ...         # repr-string.  Attributes with the same value as the default # 
-  ...         # will be skipped automatically (like `c` in this example).
+  ...         # These options allows you to exclude certain arguments from the
+  ...         # repr-string.  The first is unconditional, and the second
+  ...         # depends on the value of the given function.  By default,
+  ...         # attributes with the same value as the default (like `d` in this
+  ...         # example) will be skipped automatically.  Note that the
+  ...         # predicate can be `True` to unconditionally include an argument,
+  ...         # even if it still has its default value.
   ...         skip=['_state'],
+  ...         predicates={'c': bool},
   ...
   ...         # This option allows you to specify that certain arguments should 
   ...         # be rendered using the "positional" syntax.  Positional-only
   ...         # arguments are rendered this way by default.
   ...         positional=['a'],
   ...     )
-  >>> MyObj(1, 2, _state={3: 4})
+  >>> MyObj(1, 2, 0, _state={3: 4})
   MyObj(1, b=2)
 
 Make a repr-string that gets its values from a `__reprargs__()` method defined 

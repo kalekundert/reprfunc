@@ -45,6 +45,25 @@ test_repr:
 
     expected: Obj(a=1)
   -
+    id: from-init-predicates
+    obj:
+      > class Obj:
+      >     
+      >     def __init__(self, a, b):
+      >         self.a = a
+      >         self.b = b
+      >
+      >     __repr__ = reprfunc.repr_from_init(
+      >         predicates={
+      >             'a': bool,
+      >             'b': bool,
+      >         },
+      >     )
+      >   
+      > obj = Obj(1, None)
+
+    expected: Obj(a=1)
+  -
     id: from-init-positional
     obj:
       > class Obj:
@@ -93,8 +112,6 @@ test_repr:
   -
     id: from-dunder-verbatim
     obj:
-      > v = reprfunc.verbatim
-      >
       > class Obj:
       >     
       >     def __init__(self, a, b):
@@ -102,7 +119,7 @@ test_repr:
       >         self.b = b
       >
       >     def __reprargs__(self):
-      >         return [v(self.a)], {'b': v(self.b)}
+      >         return [verbatim(self.a)], {'b': verbatim(self.b)}
       >
       >     __repr__ = reprfunc.repr_from_dunder
       >   
@@ -142,12 +159,12 @@ test_repr_builder:
       > builder = ReprBuilder(Obj(a=1, b=-2, _c=3, d=None))
       > builder.add_attr('a', positional=True)
       > builder.add_attr(get_b, positional=True)
-      > builder.add_attr('d', positional=True, predicate=lambda x: x)
+      > builder.add_attr('d', positional=True, predicate=bool)
       >
       > builder.add_attr('a')
       > builder.add_attr(get_b, keyword='b')
       > builder.add_attr('_c', keyword='c')
-      > builder.add_attr('d', predicate=lambda x: x)
+      > builder.add_attr('d', predicate=bool)
     expected:
       > Obj(1, 2, a=1, b=2, c=3)
   -
@@ -167,11 +184,13 @@ test_repr_builder:
   -
     id: add-positional-attr-predicate
     builder:
-      > builder = ReprBuilder(Obj(a=1, b=None))
-      > builder.add_positional_attr('a', predicate=lambda x: x)
-      > builder.add_positional_attr('b', predicate=lambda x: x)
+      > builder = ReprBuilder(Obj(a=1, b=2, c=3, d=None))
+      > builder.add_positional_attr('a', predicate=True)
+      > builder.add_positional_attr('b', predicate=False)
+      > builder.add_positional_attr('c', predicate=bool)
+      > builder.add_positional_attr('d', predicate=bool)
     expected:
-      > Obj(1)
+      > Obj(1, 3)
   -
     id: add-positional-attr-not-found
     builder:
@@ -217,11 +236,13 @@ test_repr_builder:
   -
     id: add-keyword-attr-predicate
     builder:
-      > builder = ReprBuilder(Obj(a=1, b=None))
-      > builder.add_keyword_attr('a', predicate=lambda x: x)
-      > builder.add_keyword_attr('b', predicate=lambda x: x)
+      > builder = ReprBuilder(Obj(a=1, b=2, c=3, d=None))
+      > builder.add_keyword_attr('a', predicate=True)
+      > builder.add_keyword_attr('b', predicate=False)
+      > builder.add_keyword_attr('c', predicate=bool)
+      > builder.add_keyword_attr('d', predicate=bool)
     expected:
-      > Obj(a=1)
+      > Obj(a=1, c=3)
   -
     id: add-keyword-attr-not-found
     builder:
