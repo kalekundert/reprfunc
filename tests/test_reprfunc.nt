@@ -122,7 +122,24 @@ test_repr:
 
     expected: Obj(1, 2, a=3, b=4)
   -
-    id: from-dunder
+    id: from-dunder-cls-args-kwargs
+    obj:
+      > class Obj:
+      >     
+      >     def __init__(self, a, b):
+      >         self.a = a
+      >         self.b = b
+      >
+      >     def __reprargs__(self):
+      >         return 'CLS', [self.a], {'b': self.b}
+      >
+      >     __repr__ = reprfunc.repr_from_dunder
+      >   
+      > obj = Obj(1, 2)
+
+    expected: CLS(1, b=2)
+  -
+    id: from-dunder-args-kwargs
     obj:
       > class Obj:
       >     
@@ -138,6 +155,24 @@ test_repr:
       > obj = Obj(1, 2)
 
     expected: Obj(1, b=2)
+  -
+    id: from-dunder-bad-return-value
+    obj:
+      > class Obj:
+      >     
+      >     def __init__(self, a, b):
+      >         self.a = a
+      >         self.b = b
+      >
+      >     def __reprargs__(self):
+      >         return []
+      >
+      >     __repr__ = reprfunc.repr_from_dunder
+      >   
+      > obj = Obj(1, 2)
+    error:
+      type: ValueError
+      message: expected `Obj.__reprargs__()` to return (cls, args, kwargs) or (args, kwargs), not []
   -
     id: from-dunder-verbatim
     obj:
@@ -173,12 +208,19 @@ test_repr:
 
 test_repr_builder:
   -
-    id: cls
+    id: cls-str
     builder:
       > builder = ReprBuilder(Obj())
       > builder.cls = 'XXX'
     expected:
       > XXX()
+  -
+    id: cls-callable
+    builder:
+      > builder = ReprBuilder(Obj(a='A'))
+      > builder.cls = lambda x: x.a
+    expected:
+      > A()
   -
     id: add-attr
     builder:

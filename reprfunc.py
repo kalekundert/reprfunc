@@ -4,14 +4,16 @@ Utilities for making useful string representations of objects.
 
 from inspect import signature
 from operator import attrgetter
+from collections.abc import Mapping
 
 __version__ = '0.1.0'
 undef = object()
 
-def repr_from_init(self=undef, *, attrs={}, skip=[], predicates={}, positional=[]):
+def repr_from_init(self=undef, *, cls=None, attrs={}, skip=[], predicates={}, positional=[]):
     def __repr__(self):
         sig = signature(self.__init__)
         builder = ReprBuilder(self)
+        builder.cls = cls
 
         before_var = set()
         for key, param in sig.parameters.items():
@@ -59,8 +61,17 @@ def repr_from_init(self=undef, *, attrs={}, skip=[], predicates={}, positional=[
 
 def repr_from_dunder(self):
     builder = ReprBuilder(self)
-    args, kwargs = self.__reprargs__()
+    fields = self.__reprargs__()
+    cls, args, kwargs = None, [], {}
 
+    if len(fields) == 3:
+        cls, args, kwargs = fields
+    elif len(fields) == 2:
+        args, kwargs = fields
+    else:
+        raise ValueError(f"expected `{self.__class__.__name__}.__reprargs__()` to return (cls, args, kwargs) or (args, kwargs), not {fields!r}")
+
+    builder.cls = cls
     for value in args:
         builder.add_positional_value(value)
     for key, value in kwargs.items():
@@ -103,6 +114,9 @@ class ReprBuilder:
 
     def __str__(self):
         cls = self.cls or self.obj.__class__.__name__
+        if callable(cls):
+            cls = cls(self.obj)
+
         args = self.args
         kwargs = [
                 f'{k}={v}'
