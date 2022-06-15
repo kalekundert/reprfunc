@@ -19,7 +19,6 @@ test = [
   'pytest',
   'pytest-cov',
   'parametrize_from_file',
-  'voluptuous',
   'coveralls',
 ]
 doc = [

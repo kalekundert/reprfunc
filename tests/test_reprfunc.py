@@ -2,27 +2,19 @@
 
 import sys, pytest
 import parametrize_from_file as pff
-from voluptuous import Schema
 
 pytest.mark.python38 = pytest.mark.skipif(
         sys.version_info < (3, 8),
         reason="python3.8 required",
 )
-with_repr = pff.voluptuous.Namespace(
+with_repr = pff.Namespace(
         'import reprfunc',
         'from reprfunc import *',
 )
 
-@pff.parametrize(
-        schema=Schema({
-            'obj': with_repr.exec(get='obj', defer=True),
-            **with_repr.error_or({
-                'expected': str,
-            }),
-        }),
-)
+@pff.parametrize(schema=with_repr.error_or('expected'))
 def test_repr(obj, expected, error, request):
-    obj = obj.exec()
+    obj = with_repr.exec(obj)['obj']
     with error:
         assert repr(obj) == expected
 
