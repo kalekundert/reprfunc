@@ -10,8 +10,7 @@ reprfunc
    :alt: Python version
    :target: https://pypi.python.org/pypi/reprfunc
 
-.. image:: 
-   https://img.shields.io/github/workflow/status/kalekundert/reprfunc/Test%20and%20release/master
+.. image:: https://img.shields.io/github/actions/workflow/status/kalekundert/reprfunc/test_and_release.yml?branch=master
    :alt: Test status
    :target: https://github.com/kalekundert/reprfunc/actions
 
